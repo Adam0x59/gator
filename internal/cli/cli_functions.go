@@ -66,3 +66,30 @@ func HandlerRegister(s *State, cmd Command) error {
 	}
 	return nil
 }
+
+func HandlerReset(s *State, cmd Command) error {
+	err := s.Db.Reset(context.Background())
+	if err != nil {
+		return err
+	}
+	fmt.Println("Database reset successful!")
+	return nil
+}
+
+func HandlerGetUsers(s *State, cmd Command) error {
+	users, err := s.Db.GetUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	if len(users) == 0 {
+		return fmt.Errorf("no users found in the database")
+	}
+	for _, user := range users {
+		if user == s.Config.CurrentUserName {
+			fmt.Printf("* %s (current)\n", user)
+		} else {
+			fmt.Printf("* %s\n", user)
+		}
+	}
+	return nil
+}

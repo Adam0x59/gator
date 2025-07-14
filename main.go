@@ -28,6 +28,8 @@ func main() {
 	commands := cli.Commands{Commands: make(map[string]cli.HandlerFunc)}
 	commands.Register("login", cli.HandlerLogin)
 	commands.Register("register", cli.HandlerRegister)
+	commands.Register("reset", cli.HandlerReset)
+	commands.Register("users", cli.HandlerGetUsers)
 
 	args := os.Args
 	if len(args) < 2 {
