@@ -61,7 +61,7 @@ func Write(cfg *Config) error {
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "    ") // Prettify
+	encoder.SetIndent("", "    ")
 	if err := encoder.Encode(cfg); err != nil {
 		return fmt.Errorf("failed to encode config JSON: %w", err)
 	}

@@ -3,9 +3,11 @@ package cli
 import (
 	"fmt"
 	"working/github.com/adam0x59/gator/internal/config"
+	"working/github.com/adam0x59/gator/internal/database"
 )
 
 type State struct {
+	Db     *database.Queries
 	Config *config.Config
 }
 
