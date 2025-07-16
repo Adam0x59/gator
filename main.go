@@ -7,6 +7,7 @@ import (
 	"working/github.com/adam0x59/gator/internal/cli"
 	"working/github.com/adam0x59/gator/internal/config"
 	"working/github.com/adam0x59/gator/internal/database"
+	"working/github.com/adam0x59/gator/internal/rss"
 
 	_ "github.com/lib/pq"
 )
@@ -30,6 +31,9 @@ func main() {
 	commands.Register("register", cli.HandlerRegister)
 	commands.Register("reset", cli.HandlerReset)
 	commands.Register("users", cli.HandlerGetUsers)
+	commands.Register("agg", rss.HandlerAgg)
+	commands.Register("addfeed", rss.AddFeed)
+	commands.Register("feeds", rss.Feeds)
 
 	args := os.Args
 	if len(args) < 2 {

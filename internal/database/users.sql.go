@@ -7,7 +7,7 @@ package database
 
 import (
 	"context"
-	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -24,27 +24,20 @@ RETURNING id, created_at, updated_at, name
 `
 
 type CreateUserParams struct {
-	Column1 uuid.NullUUID
-	Column2 sql.NullTime
-	Column3 sql.NullTime
-	Column4 sql.NullString
-}
-
-type CreateUserRow struct {
 	ID        uuid.UUID
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	Name      string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
-		arg.Column1,
-		arg.Column2,
-		arg.Column3,
-		arg.Column4,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Name,
 	)
-	var i CreateUserRow
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
@@ -59,16 +52,9 @@ SELECT id, created_at, updated_at, name FROM users
 WHERE name = $1
 `
 
-type GetUserRow struct {
-	ID        uuid.UUID
-	CreatedAt sql.NullTime
-	UpdatedAt sql.NullTime
-	Name      string
-}
-
-func (q *Queries) GetUser(ctx context.Context, dollar_1 sql.NullString) (GetUserRow, error) {
-	row := q.db.QueryRowContext(ctx, getUser, dollar_1)
-	var i GetUserRow
+func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, name)
+	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
@@ -76,6 +62,18 @@ func (q *Queries) GetUser(ctx context.Context, dollar_1 sql.NullString) (GetUser
 		&i.Name,
 	)
 	return i, err
+}
+
+const getUserFromID = `-- name: GetUserFromID :one
+SELECT name FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserFromID(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserFromID, id)
+	var name string
+	err := row.Scan(&name)
+	return name, err
 }
 
 const getUsers = `-- name: GetUsers :many
