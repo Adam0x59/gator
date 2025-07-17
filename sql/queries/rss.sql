@@ -13,3 +13,8 @@ RETURNING id, created_at, updated_at, name, url, user_id;
 -- name: Feeds :many
 SELECT feeds.name, feeds.url, users.name AS uname FROM feeds
 INNER JOIN users ON feeds.user_id = users.id;
+
+-- name: Feed :one
+SELECT feeds.id 
+FROM feeds 
+WHERE feeds.url = $1;

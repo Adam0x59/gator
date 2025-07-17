@@ -32,8 +32,11 @@ func main() {
 	commands.Register("reset", cli.HandlerReset)
 	commands.Register("users", cli.HandlerGetUsers)
 	commands.Register("agg", rss.HandlerAgg)
-	commands.Register("addfeed", rss.AddFeed)
+	commands.Register("addfeed", cli.MiddlewareLoggedIn(rss.AddFeed))
 	commands.Register("feeds", rss.Feeds)
+	commands.Register("follow", cli.MiddlewareLoggedIn(rss.Follow))
+	commands.Register("following", cli.MiddlewareLoggedIn(rss.Following))
+	commands.Register("unfollow", cli.MiddlewareLoggedIn(rss.Unfollow))
 
 	args := os.Args
 	if len(args) < 2 {

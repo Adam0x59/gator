@@ -88,3 +88,13 @@ func HandlerGetUsers(s *State, cmd Command) error {
 	}
 	return nil
 }
+
+func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) error) func(*State, Command) error {
+	return func(s *State, cmd Command) error {
+		user, err := s.Db.GetUser(context.Background(), s.Config.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("you must be logged in to use this command: %w", err)
+		}
+		return handler(s, cmd, user)
+	}
+}

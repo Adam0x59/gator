@@ -26,7 +26,6 @@ func GetConfigPath() (string, error) {
 }
 
 func Read() (Config, error) {
-
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return Config{}, err
@@ -48,7 +47,6 @@ func Read() (Config, error) {
 }
 
 func Write(cfg *Config) error {
-
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return err
