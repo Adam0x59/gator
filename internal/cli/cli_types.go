@@ -27,7 +27,6 @@ func (c *Commands) Run(s *State, cmd Command) error {
 	if !ok {
 		return fmt.Errorf("unknown command: %s", cmd.Name)
 	}
-
 	err := function(s, cmd)
 	if err != nil {
 		return fmt.Errorf("command %s failed with error: %w", cmd.Name, err)

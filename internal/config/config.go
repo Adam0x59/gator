@@ -30,13 +30,11 @@ func Read() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-
 	file, err := os.Open(configPath)
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to open config file: %w", err)
 	}
 	defer file.Close()
-
 	var cfg Config
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&cfg); err != nil {
@@ -51,13 +49,11 @@ func Write(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-
 	file, err := os.Create(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to open config file for writing: %w", err)
 	}
 	defer file.Close()
-
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "    ")
 	if err := encoder.Encode(cfg); err != nil {

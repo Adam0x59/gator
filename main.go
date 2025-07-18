@@ -17,7 +17,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error reading config: %v", err)
 	}
-
 	state := cli.State{Config: &cfg}
 	db, err := sql.Open("postgres", cfg.DbUrl)
 	if err != nil {
@@ -25,7 +24,6 @@ func main() {
 	}
 	dbQueries := database.New(db)
 	state.Db = dbQueries
-
 	commands := cli.Commands{Commands: make(map[string]cli.HandlerFunc)}
 	commands.Register("login", cli.HandlerLogin)
 	commands.Register("register", cli.HandlerRegister)
@@ -37,7 +35,6 @@ func main() {
 	commands.Register("follow", cli.MiddlewareLoggedIn(rss.Follow))
 	commands.Register("following", cli.MiddlewareLoggedIn(rss.Following))
 	commands.Register("unfollow", cli.MiddlewareLoggedIn(rss.Unfollow))
-
 	args := os.Args
 	if len(args) < 2 {
 		log.Fatal("Not enough arguments, please try again")

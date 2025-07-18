@@ -34,7 +34,16 @@ type AddFeedParams struct {
 	UserID    uuid.UUID
 }
 
-func (q *Queries) AddFeed(ctx context.Context, arg AddFeedParams) (Feed, error) {
+type AddFeedRow struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+	Url       string
+	UserID    uuid.UUID
+}
+
+func (q *Queries) AddFeed(ctx context.Context, arg AddFeedParams) (AddFeedRow, error) {
 	row := q.db.QueryRowContext(ctx, addFeed,
 		arg.ID,
 		arg.CreatedAt,
@@ -43,7 +52,7 @@ func (q *Queries) AddFeed(ctx context.Context, arg AddFeedParams) (Feed, error) 
 		arg.Url,
 		arg.UserID,
 	)
-	var i Feed
+	var i AddFeedRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,

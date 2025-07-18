@@ -34,7 +34,6 @@ func HandlerRegister(s *State, cmd Command) error {
 		return fmt.Errorf("no argument provided: " +
 			"register requires name of user to be registered:\n    gator register <name>")
 	}
-
 	args := database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),

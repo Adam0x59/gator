@@ -2,6 +2,7 @@ package rss
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -15,12 +16,20 @@ import (
 )
 
 func HandlerAgg(s *cli.State, cmd cli.Command) error {
-	feedStruct, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		return err
+	if (len(cmd.Args) == 0) || (len(cmd.Args) > 1) {
+		return fmt.Errorf("no argument provided: " +
+			"agg requires a time duration between requests to be set ie:\"1s, 1m, 1h\":\n    gator addfeed <name> <url>")
 	}
-	fmt.Println(feedStruct)
-	return nil
+	timeBetweenReqs, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("error parsing time duration as: %w", err)
+	}
+	fmt.Println("--------------------")
+	fmt.Printf("Collecting feeds every %s\n\n", timeBetweenReqs)
+	ticker := time.NewTicker(timeBetweenReqs)
+	for ; ; <-ticker.C {
+		ScrapeFeeds(s, cmd)
+	}
 }
 
 func AddFeed(s *cli.State, cmd cli.Command, user database.User) error {
@@ -31,7 +40,6 @@ func AddFeed(s *cli.State, cmd cli.Command, user database.User) error {
 		return fmt.Errorf("only one argument specified: " +
 			"addFeed requires name AND url:\n    gator addfeed <name> <url>")
 	}
-
 	args := database.AddFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
@@ -40,12 +48,10 @@ func AddFeed(s *cli.State, cmd cli.Command, user database.User) error {
 		Url:       cmd.Args[1],
 		UserID:    user.ID,
 	}
-
 	i, err := s.Db.AddFeed(context.Background(), args)
 	if err != nil {
 		return fmt.Errorf("error adding feed: %w", err)
 	}
-
 	fmt.Printf("Feed %s was added to the database:\n", cmd.Args[0])
 	fmt.Printf("Feed Details:\n  id: %s\n  created_at: %s\n  updated_at: %s\n  name: %s\n  url: %s\n, user: %s\n",
 		i.ID, i.CreatedAt, i.UpdatedAt, i.Name, i.Url, s.Config.CurrentUserName)
@@ -55,24 +61,20 @@ func AddFeed(s *cli.State, cmd cli.Command, user database.User) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func Feeds(s *cli.State, cmd cli.Command) error {
-
 	feeds, err := s.Db.Feeds(context.Background())
 	if err != nil {
 		return err
 	}
-
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header([]string{"Feed Name", "URL", "User Name"})
 	for _, feed := range feeds {
 		feedData := []string{feed.Name, feed.Url, feed.Uname}
 		table.Append(feedData)
 	}
-
 	table.Render()
 	return nil
 }
@@ -87,7 +89,6 @@ func Follow(s *cli.State, cmd cli.Command, user database.User) error {
 	if err != nil {
 		return fmt.Errorf("error getting feed id as: %w", err)
 	}
-
 	args := database.CreateFeedFollowParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
@@ -129,11 +130,37 @@ func Unfollow(s *cli.State, cmd cli.Command, user database.User) error {
 		UserID: user.ID,
 		FeedID: feed,
 	}
-
 	err = s.Db.DeleteFollow(context.Background(), args)
 	if err != nil {
-		fmt.Errorf("error deleting feed %s, for %q: %w", cmd.Args[0], user.Name, err)
+		return fmt.Errorf("error deleting feed %s, for %q: %w", cmd.Args[0], user.Name, err)
 	}
 	fmt.Printf("%q is no longer following %q\n", user.Name, cmd.Args[0])
+	return nil
+}
+
+func ScrapeFeeds(s *cli.State, cmd cli.Command) error {
+	feed, err := s.Db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return fmt.Errorf("error getting next feed to search as: %w", err)
+	}
+	timestamp := time.Now()
+	args := database.MarkFeedFetchedParams{
+		UpdatedAt:     timestamp,
+		LastFetchedAt: sql.NullTime{Time: timestamp, Valid: true},
+		ID:            feed.ID,
+	}
+	err = s.Db.MarkFeedFetched(context.Background(), args)
+	if err != nil {
+		return fmt.Errorf("error marking feed %q as fetched as: %w", feed.Name, err)
+	}
+	feeds, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		return fmt.Errorf("error fetching feed as: %w", err)
+	}
+	fmt.Printf("\n%s:\n", feeds.Channel.Title)
+	for _, item := range feeds.Channel.Item {
+		fmt.Printf(" - %s\n", item.Title)
+	}
+	fmt.Println("--------------------")
 	return nil
 }
