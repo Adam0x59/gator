@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 	"working/github.com/adam0x59/gator/internal/cli"
 	"working/github.com/adam0x59/gator/internal/database"
@@ -157,10 +158,49 @@ func ScrapeFeeds(s *cli.State, cmd cli.Command) error {
 	if err != nil {
 		return fmt.Errorf("error fetching feed as: %w", err)
 	}
-	fmt.Printf("\n%s:\n", feeds.Channel.Title)
+	var pqErr *pq.Error
 	for _, item := range feeds.Channel.Item {
-		fmt.Printf(" - %s\n", item.Title)
+		published, err := time.Parse(time.RFC1123, item.PubDate)
+		if err != nil {
+			fmt.Printf("error parsing published date, setting value to %v.\n", timestamp)
+			published = timestamp
+		}
+		args := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   timestamp,
+			UpdatedAt:   timestamp,
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: true},
+			PublishedAt: sql.NullTime{Time: published, Valid: true},
+			FeedID:      feed.ID,
+		}
+		_, err = s.Db.CreatePost(context.Background(), args)
+		if err != nil {
+			if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+				continue
+			}
+			return fmt.Errorf("error creating post as: %w", err)
+		}
 	}
-	fmt.Println("--------------------")
+	return nil
+}
+
+func Browse(s *cli.State, cmd cli.Command, user database.User) error {
+	limit64, err := strconv.ParseInt(cmd.Args[0], 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid limit: %w", err)
+	}
+	args := database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  limit64,
+	}
+	posts, err := s.Db.GetPostsForUser(context.Background(), args)
+	if err != nil {
+		return fmt.Errorf("error getting posts as: %w", err)
+	}
+	for _, post := range posts {
+		fmt.Printf("%s\n  Link: %s\n\n", post.Title, post.Url)
+	}
 	return nil
 }

@@ -35,6 +35,7 @@ func main() {
 	commands.Register("follow", cli.MiddlewareLoggedIn(rss.Follow))
 	commands.Register("following", cli.MiddlewareLoggedIn(rss.Following))
 	commands.Register("unfollow", cli.MiddlewareLoggedIn(rss.Unfollow))
+	commands.Register("browse", cli.MiddlewareLoggedIn(rss.Browse))
 	args := os.Args
 	if len(args) < 2 {
 		log.Fatal("Not enough arguments, please try again")
